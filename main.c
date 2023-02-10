@@ -1,139 +1,116 @@
 #include <stdio.h>
 #include <common.h>
-#include <string.h>
 #include <stdlib.h>
+#include <time.h>
+#include "command_line.h"
 
-static void print_usage(char *exe_name)
+static error_t do_lzss_encoding(buffer_t input, buffer_t *output)
 {
-    printf("Usage:%s <mode> <input> <output>\n", exe_name);
-    printf("Where mode can be one of LZSS, ROLZ or 1 or 2 respectively.\n");
-}
+    lzss_config_t config = lzss_config_init(10, 6, 2);
+    u32 output_upper_bound = lzss_get_upper_bound(input.length);
 
-typedef enum mode_t
-{
-    MODE_LZSS,
-    MODE_ROLZ
-} mode_t;
+    output->bytes = calloc(output_upper_bound, sizeof(u8));
 
-static error_t parse_mode(const char *string, mode_t *mode)
-{
-    if (strcmpi(string, "LZSS") || strcmpi(string, "1"))
-    {
-        *mode = MODE_LZSS;
-        return ERROR_ALL_GOOD;
-    }
-    if (strcmpi(string, "ROLZ") || strcmpi(string, "2"))
-    {
-        *mode = MODE_ROLZ;
-        return ERROR_ALL_GOOD;
-    }
-
-    return ERROR_BAD_FORMAT;
-}
-
-static error_t read_file(const char *file_name, u8 **buffer, u32 *buffer_size)
-{
-    FILE *file = fopen(file_name, "rb");
-    if (file == NULL)
-        return ERROR_FILE_NOT_FOUND;
-
-    fseek(file, 0, SEEK_END);   // Seek to the end of the file
-    *buffer_size = ftell(file); // Get how many bytes the file contains
-    fseek(file, 0, SEEK_SET);   // Rewind the file pointer to 0
-
-    *buffer = calloc(*buffer_size, sizeof(u8));
-
-    if (*buffer == NULL)
-    {
-        fclose(file);
+    if (output->bytes == NULL)
         return ERROR_COULD_NOT_ALLOCATE;
-    }
 
-    u32 read_value = fread(*buffer, sizeof(u8), *buffer_size, file);
+    return lzss_encode(config, input.bytes, input.length, output->bytes, output_upper_bound, &output->length);
+}
 
-    if (read_value != *buffer_size)
-    {
-        free(*buffer);
-        *buffer = NULL;
-        *buffer_size = 0;
-        fclose(file);
-        return ERROR_COULD_NOT_READ_FILE;
-    }
-
-    fclose(file);
+static error_t do_lzss_decoding(buffer_t input, buffer_t *output)
+{
     return ERROR_ALL_GOOD;
 }
 
-static error_t write_file(const char *file_name, u8 *buffer, u32 buffer_size)
+static int print_error_message(command_line_error_t cli_error, error_t lib_error)
 {
-    FILE *file = fopen(file_name, "wb+");
-
-    if (file == NULL)
-        return ERROR_COULD_NOT_OPEN_FILE;
-
-    u32 written_bytes = fwrite(buffer, sizeof(u8), buffer_size, file);
-
-    fflush(file);
-    fclose(file);
-
-    if (written_bytes != buffer_size)
-        return ERROR_WRONG_OUTPUT_SIZE;
-
-    return ERROR_ALL_GOOD;
-}
-
-int main(int argc, char **argv)
-{
-    if (argc != 4)
-        print_usage(argv[0]);
-    else
+    if (cli_error)
     {
-        mode_t mode;
-        if (parse_mode(argv[1], &mode))
+        switch (cli_error)
         {
-            print_usage(argv[0]);
-            return EXIT_FAILURE;
-        }
+        case CLI_COULD_NOT_ALLOCATE:
+            printf("Error: Could not allocate enough memory.\n");
+            break;
 
-        u8 *input_file;
-        u32 input_file_size;
-        if (read_file(argv[2], &input_file, &input_file_size))
-        {
-            printf("Failed when reading input file \"%s\"\n", argv[2]);
-            return EXIT_FAILURE;
-        }
+        case CLI_COULD_NOT_OPEN_FILE:
+            printf("Error: Could not open the file.\n");
+            break;
 
-        printf("Bytes read: %d\n", input_file_size);
+        case CLI_COULD_NOT_READ_FILE:
+            printf("Error: Could not read the file.\n");
+            break;
 
-        switch (mode)
-        {
-        case MODE_LZSS:
-        {
-            lzss_config_t config = lzss_config_init(10, 6, 2);
-            u32 output_upper_bound = lzss_get_upper_bound(input_file_size);
+        case CLI_FILE_NOT_FOUND:
+            printf("Error: File not found.\n");
+            break;
 
-            u8 *buffer = calloc(output_upper_bound, sizeof(u8));
-            u32 output_length = 0;
-            if (lzss_encode(config, input_file, input_file_size, buffer, output_upper_bound, &output_length))
-            {
-                printf("An error ocurred!\n");
-                return EXIT_FAILURE;
-            }
-
-            if (write_file(argv[3], buffer, output_length))
-            {
-                printf("Failed when writing output file \"%s\"\n", argv[3]);
-                return EXIT_FAILURE;
-            }
-
+        default:
             break;
         }
-        case MODE_ROLZ:
-        {
-            break;
-        }
-        }
+
+        // TODO: Insert switch/case to print errors
+        return EXIT_FAILURE;
+    }
+
+    if (lib_error)
+    {
+        // TODO: Insert switch/case to print errors
+        return EXIT_FAILURE;
     }
 
     return EXIT_SUCCESS;
+}
+
+int main(int argc, const char **argv)
+{
+    command_line_error_t cli_error = CLI_NO_ERROR;
+    error_t lib_error = ERROR_ALL_GOOD;
+
+    command_line_options_t options = {0};
+    if ((cli_error = parse_command_line_arguments(argc, argv, &options)))
+        goto exit;
+
+    buffer_t input_file = {0};
+    if ((cli_error = read_file(argv[3], &input_file)))
+    {
+        printf("Failed when reading input file \"%s\"\n", argv[3]);
+        goto exit;
+    }
+
+    buffer_t output_file = {0};
+
+    clock_t start_time = clock();
+
+    switch (options.mode)
+    {
+    case MODE_LZSS:
+        if (options.operation == OP_ENCODE)
+        {
+            if ((lib_error = do_lzss_encoding(input_file, &output_file)))
+                goto exit;
+        }
+        else
+        {
+            if ((lib_error = do_lzss_decoding(input_file, &output_file)))
+                goto exit;
+        }
+        break;
+    case MODE_ROLZ:
+        return EXIT_FAILURE; // TODO: Not implemented!
+        break;
+    }
+
+    clock_t end_time = clock();
+
+    printf("Compressed %d to %d bytes in %ldms\n", input_file.length, output_file.length, (end_time - start_time) / (CLOCKS_PER_SEC / 1000));
+
+    // if (write_file(argv[3], buffer, output_length))
+    // {
+    //     printf("Failed when writing output file \"%s\"\n", argv[3]);
+    //     return EXIT_FAILURE;
+    // }
+
+exit:
+    // TODO: Should we deallocate? We're finishing the program here.
+    return print_error_message(cli_error, lib_error);
 }

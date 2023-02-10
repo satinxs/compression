@@ -18,12 +18,7 @@ typedef enum error_t
     ERROR_NO_OP,
     ERROR_BUFFER_OUT_OF_BOUNDS,
     ERROR_COULD_NOT_ALLOCATE,
-    ERROR_WRONG_OUTPUT_SIZE,
-    ERROR_BAD_FORMAT,
-    ERROR_FILE_NOT_FOUND,
-    ERROR_COULD_NOT_OPEN_FILE,
-    ERROR_COULD_NOT_READ_FILE,
-    ERROR_COULD_NOT_WRITE_FILE,
+    ERROR_WRONG_OUTPUT_SIZE
 } error_t;
 
 typedef struct lzss_config_t
@@ -35,6 +30,12 @@ typedef struct lzss_config_t
     u8 length_bits;
     u32 max_length;
 } lzss_config_t;
+
+typedef struct buffer_t
+{
+    u8 *bytes;
+    u32 length;
+} buffer_t;
 
 #endif
 

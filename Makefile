@@ -11,10 +11,10 @@ OUTPUT=test
 endif
 
 build:
-	$(CC) main.c lib/bit_stream.c lib/lzss.c $(DEBUG_FLAGS) -o $(OUTPUT)
+	$(CC) main.c command_line.c lib/bit_stream.c lib/lzss.c $(DEBUG_FLAGS) -o $(OUTPUT)
 
 release:
-	$(CC) main.c lib/bit_stream.c lib/lzss.c $(RELEASE_FLAGS) -o $(OUTPUT)
+	$(CC) main.c command_line.c lib/bit_stream.c lib/lzss.c $(RELEASE_FLAGS) -o $(OUTPUT)
 
 clean:
 	rm -rf *.exe *.pdb
