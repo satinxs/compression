@@ -19,7 +19,7 @@ static inline command_line_error_t parse_operation(const char *string, command_l
     if (string[0] == 'e')
         options->operation = OP_ENCODE;
     else if (string[0] == 'd')
-        options->operation = OP_ENCODE;
+        options->operation = OP_DECODE;
     else
         return CLI_BAD_FORMAT;
 
@@ -78,7 +78,7 @@ command_line_error_t read_file(const char *file_name, buffer_t *buffer)
     buffer->length = ftell(file); // Get how many bytes the file contains
     fseek(file, 0, SEEK_SET);     // Rewind the file pointer to 0
 
-    buffer->bytes = calloc(buffer->length, sizeof(u8));
+    buffer->bytes = (u8 *)calloc(buffer->length, sizeof(u8));
 
     if (buffer->bytes == NULL)
     {

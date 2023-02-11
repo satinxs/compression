@@ -9,7 +9,7 @@ static error_t do_lzss_encoding(buffer_t input, buffer_t *output)
     lzss_config_t config = lzss_config_init(10, 6, 2);
     u32 output_upper_bound = lzss_get_upper_bound(input.length);
 
-    output->bytes = calloc(output_upper_bound, sizeof(u8));
+    output->bytes = (u8 *)calloc(output_upper_bound, sizeof(u8));
 
     if (output->bytes == NULL)
         return ERROR_COULD_NOT_ALLOCATE;
@@ -19,7 +19,18 @@ static error_t do_lzss_encoding(buffer_t input, buffer_t *output)
 
 static error_t do_lzss_decoding(buffer_t input, buffer_t *output)
 {
-    return ERROR_ALL_GOOD;
+    error_t error = ERROR_ALL_GOOD;
+
+    lzss_config_t config = lzss_config_init(10, 6, 2);
+
+    u32 original_length = 0;
+    if ((error = lzss_get_original_length(input.bytes, input.length, &original_length)))
+        return error;
+
+    output->bytes = (u8 *)calloc(original_length, sizeof(u8));
+    output->length = original_length;
+
+    return lzss_decode(config, input.bytes, input.length, output->bytes, output->length);
 }
 
 static int print_error_message(command_line_error_t cli_error, error_t lib_error)
@@ -45,6 +56,7 @@ static int print_error_message(command_line_error_t cli_error, error_t lib_error
             break;
 
         default:
+            printf("CLI Error code: %d\n", cli_error);
             break;
         }
 
@@ -55,6 +67,7 @@ static int print_error_message(command_line_error_t cli_error, error_t lib_error
     if (lib_error)
     {
         // TODO: Insert switch/case to print errors
+        printf("Lib Error code: %d\n", lib_error);
         return EXIT_FAILURE;
     }
 
@@ -96,7 +109,8 @@ int main(int argc, const char **argv)
         }
         break;
     case MODE_ROLZ:
-        return EXIT_FAILURE; // TODO: Not implemented!
+        lib_error = ERROR_NO_OP; // TODO: Not implemented!
+        goto exit;
         break;
     }
 
@@ -104,11 +118,11 @@ int main(int argc, const char **argv)
 
     printf("Compressed %d to %d bytes in %ldms\n", input_file.length, output_file.length, (end_time - start_time) / (CLOCKS_PER_SEC / 1000));
 
-    // if (write_file(argv[3], buffer, output_length))
-    // {
-    //     printf("Failed when writing output file \"%s\"\n", argv[3]);
-    //     return EXIT_FAILURE;
-    // }
+    if ((cli_error = write_file(argv[4], output_file)))
+    {
+        printf("Failed when writing output file \"%s\"\n", argv[4]);
+        goto exit;
+    }
 
 exit:
     // TODO: Should we deallocate? We're finishing the program here.
