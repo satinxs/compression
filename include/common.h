@@ -11,6 +11,7 @@
 
 typedef uint8_t u8;
 typedef uint32_t u32;
+typedef uint64_t u64;
 
 typedef enum error_t
 {
@@ -38,6 +39,10 @@ typedef struct buffer_t
 } buffer_t;
 
 #endif
+
+u32 jenkins32(buffer_t buffer);
+u32 adler32(buffer_t buffer);
+u32 hash_bytes(buffer_t buffer);
 
 lzss_config_t lzss_config_init(u8 offset_bits, u8 length_bits, u8 minimum_length);
 
