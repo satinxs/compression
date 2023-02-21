@@ -26,9 +26,9 @@ _API u32 lzss_get_upper_bound(u32 input_length)
     return (total_bits / 8) + ((total_bits % 8 > 0) ? 1 : 0);
 }
 
-_API error_t lzss_get_original_length(u8 const *input, u32 input_length, u32 *original_length)
+_API error_t lzss_get_original_length(buffer_t input, u32 *original_length)
 {
-    bit_stream_t stream = bit_stream_init((u8 *)input, input_length);
+    bit_stream_t stream = bit_stream_init(input);
 
     u32 length = 0;
     error_t error = bit_stream_read_7bit_int32(&stream, &length);
@@ -49,19 +49,19 @@ typedef struct match_t
     u32 length;
 } match_t;
 
-static inline match_t __get_longest_match(lzss_config_t config, u8 const *input, u32 input_length, u32 index)
+static inline match_t __get_longest_match(lzss_config_t config, buffer_t input, u32 index)
 {
-    if (index + config.minimum_length >= input_length)
+    if (index + config.minimum_length >= input.length)
         return (match_t){.offset = 0, .length = 0};
 
     u32 best_offset = 0, best_length = 0;
     u32 offset = (config.max_offset > index) ? 0 : index - config.max_offset;
 
-    while (offset < index && offset < input_length)
+    while (offset < index && offset < input.length)
     {
         u32 length = 0;
 
-        while (offset + length < input_length && index + length < input_length && input[offset + length] == input[index + length])
+        while (offset + length < input.length && index + length < input.length && input.bytes[offset + length] == input.bytes[index + length])
             length += 1;
 
         // We compare greater or equal, since a lower offset is better
@@ -82,22 +82,22 @@ static inline match_t __get_longest_match(lzss_config_t config, u8 const *input,
     if ((error = fn)) \
         goto error_exit;
 
-error_t lzss_encode(lzss_config_t config, u8 const *input, u32 input_length, u8 *output, u32 output_bounds, u32 *output_length)
+error_t lzss_encode(lzss_config_t config, buffer_t input, buffer_t *output, u32 output_bounds)
 {
     error_t error = ERROR_ALL_GOOD;
 
     // If there are no input bytes, we don't have to do anything.
-    if (input_length == 0)
+    if (input.length == 0)
         return ERROR_NO_OP;
 
-    bit_stream_t stream = bit_stream_init(output, output_bounds);
+    bit_stream_t stream = bit_stream_init(*output);
 
     // Write the initial size of the buffer
-    try(bit_stream_write_7bit_int32(&stream, input_length));
+    try(bit_stream_write_7bit_int32(&stream, input.length));
 
-    for (u32 index = 0; index < input_length;)
+    for (u32 index = 0; index < input.length;)
     {
-        match_t match = __get_longest_match(config, input, input_length, index);
+        match_t match = __get_longest_match(config, input, index);
 
         if (match.length >= config.minimum_length)
         {
@@ -109,7 +109,7 @@ error_t lzss_encode(lzss_config_t config, u8 const *input, u32 input_length, u8 
         else
         {
             try(bit_stream_write_bit(&stream, 0));
-            try(bit_stream_write_int(&stream, input[index], 8));
+            try(bit_stream_write_int(&stream, input.bytes[index], 8));
             index += 1;
         }
     }
@@ -119,30 +119,30 @@ error_t lzss_encode(lzss_config_t config, u8 const *input, u32 input_length, u8 
     goto no_error_exit;
 
 error_exit:
-    *output_length = 0;
+    output->length = 0;
     return error;
 
 no_error_exit:
-    *output_length = stream.buffer_position;
+    output->length = stream.buffer_position;
     return error;
 }
 
-error_t lzss_decode(lzss_config_t config, u8 const *input, u32 input_length, u8 *output, u32 output_length)
+error_t lzss_decode(lzss_config_t config, buffer_t input, buffer_t *output)
 {
     error_t error = ERROR_ALL_GOOD;
 
-    if (input_length == 0 || output_length == 0)
+    if (input.length == 0 || output->length == 0)
         return ERROR_NO_OP;
 
-    bit_stream_t stream = bit_stream_init((u8 *)input, input_length);
+    bit_stream_t stream = bit_stream_init(input);
 
     u32 original_size = 0;
     try(bit_stream_read_7bit_int32(&stream, &original_size));
 
-    if (original_size != output_length)
+    if (original_size != output->length)
         return ERROR_WRONG_OUTPUT_SIZE;
 
-    for (u32 index = 0; index < output_length;)
+    for (u32 index = 0; index < output->length;)
     {
         u8 is_pair = 0;
         try(bit_stream_read_bit(&stream, &is_pair));
@@ -156,7 +156,7 @@ error_t lzss_decode(lzss_config_t config, u8 const *input, u32 input_length, u8 
             try(bit_stream_read_int(&stream, &length, config.length_bits));
 
             for (u32 i = 0; i < length; i += 1)
-                output[index + i] = output[index - offset + i];
+                output->bytes[index + i] = output->bytes[index - offset + i];
 
             index += length;
         }
@@ -164,7 +164,7 @@ error_t lzss_decode(lzss_config_t config, u8 const *input, u32 input_length, u8 
         {
             u32 literal = 0;
             try(bit_stream_read_int(&stream, &literal, 8));
-            output[index] = (u8)(literal & 0xFF);
+            output->bytes[index] = (u8)(literal & 0xFF);
             index += 1;
         }
     }

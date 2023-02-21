@@ -47,7 +47,7 @@ u32 hash_bytes(buffer_t buffer);
 lzss_config_t lzss_config_init(u8 offset_bits, u8 length_bits, u8 minimum_length);
 
 u32 lzss_get_upper_bound(u32 input_length);
-error_t lzss_encode(lzss_config_t config, u8 const *input, u32 input_length, u8 *output, u32 output_bound_size, u32 *output_length);
+error_t lzss_encode(lzss_config_t config, buffer_t input, buffer_t *output, u32 output_bounds);
 
-error_t lzss_get_original_length(u8 const *input, u32 input_length, u32 *original_length);
-error_t lzss_decode(lzss_config_t config, u8 const *input, u32 input_length, u8 *output, u32 output_length);
+error_t lzss_get_original_length(buffer_t input, u32 *original_length);
+error_t lzss_decode(lzss_config_t config, buffer_t input, buffer_t *output);

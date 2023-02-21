@@ -5,11 +5,11 @@ inline void bit_stream_reset(bit_stream_t *stream)
     stream->buffer_position = 0;
 }
 
-inline bit_stream_t bit_stream_init(u8 *buffer, u32 buffer_length)
+inline bit_stream_t bit_stream_init(buffer_t buffer)
 {
     return (bit_stream_t){
-        .buffer = buffer,
-        .buffer_length = buffer_length,
+        .buffer = buffer.bytes,
+        .buffer_length = buffer.length,
         .buffer_position = 0,
 
         .byte_buffer = 0,

@@ -6,12 +6,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/test.exe",
-            "args": [
-                "d",
-                "lzss",
-                "KingsBounty.md.lzss",
-                "KingsBounty.md.orig"
-            ],
+            "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

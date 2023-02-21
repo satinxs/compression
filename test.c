@@ -35,7 +35,7 @@ void test_lzss(const char *file_name)
 
     const clock_t start_encoding = clock();
 
-    if ((error = lzss_encode(config, input_file.bytes, input_file.length, encoded.bytes, upper_bound_length, &encoded.length)))
+    if ((error = lzss_encode(config, input_file, &encoded, upper_bound_length)))
     {
         printf("Failed encoding, error: %d\n", error);
         free(encoded.bytes);
@@ -61,7 +61,7 @@ void test_lzss(const char *file_name)
 
     const clock_t start_decoding = clock();
 
-    if ((error = lzss_decode(config, encoded.bytes, encoded.length, decoded.bytes, decoded.length)))
+    if ((error = lzss_decode(config, encoded, &decoded)))
     {
         printf("Failed decoding, error: %d\n", error);
         free(encoded.bytes);

@@ -19,6 +19,9 @@ profile:
 test:
 	$(CC) test.c command_line.c lib/hash.c lib/bit_stream.c lib/lzss.c -Include $(RELEASE_FLAGS) -o test
 
+test-debug:
+	$(CC) test.c command_line.c lib/hash.c lib/bit_stream.c lib/lzss.c -Include $(DEBUG_FLAGS) -o test
+
 release:
 	$(CC) main.c command_line.c lib/hash.c lib/bit_stream.c lib/lzss.c $(RELEASE_FLAGS) -o $(OUTPUT)
 

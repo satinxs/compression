@@ -10,11 +10,12 @@ static error_t do_lzss_encoding(buffer_t input, buffer_t *output)
     u32 output_upper_bound = lzss_get_upper_bound(input.length);
 
     output->bytes = (u8 *)calloc(output_upper_bound, sizeof(u8));
+    output->length = output_upper_bound;
 
     if (output->bytes == NULL)
         return ERROR_COULD_NOT_ALLOCATE;
 
-    return lzss_encode(config, input.bytes, input.length, output->bytes, output_upper_bound, &output->length);
+    return lzss_encode(config, input, output, output_upper_bound);
 }
 
 static error_t do_lzss_decoding(buffer_t input, buffer_t *output)
@@ -24,13 +25,13 @@ static error_t do_lzss_decoding(buffer_t input, buffer_t *output)
     lzss_config_t config = lzss_config_init(10, 6, 2);
 
     u32 original_length = 0;
-    if ((error = lzss_get_original_length(input.bytes, input.length, &original_length)))
+    if ((error = lzss_get_original_length(input, &original_length)))
         return error;
 
     output->bytes = (u8 *)calloc(original_length, sizeof(u8));
     output->length = original_length;
 
-    return lzss_decode(config, input.bytes, input.length, output->bytes, output->length);
+    return lzss_decode(config, input, output);
 }
 
 static int print_error_message(command_line_error_t cli_error, error_t lib_error)
