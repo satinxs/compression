@@ -10,7 +10,7 @@ typedef error_t (*process_fn_t)(buffer_t in, buffer_t *out);
 
 static inline rolz_config_t get_rolz_config()
 {
-    return rolz_config_init(8, 8, 2, 16); // 8, 4, 2, 24 or: 4, 4, 2, 10
+    return rolz_config_init(8, 4, 2, 16); // 8, 4, 2, 24 or: 4, 4, 2, 10
 }
 
 static inline lzss_config_t get_lzss_config()
@@ -104,15 +104,16 @@ void test_compression(const char *file_name, const char *algorithm, process_fn_t
 
     if (!(original_hash1 == decoded_hash1 && original_hash2 == decoded_hash2 && original_hash3 == decoded_hash3))
     {
-        printf("Failed comparing hashes.\n");
+        printf("Failed comparing hashes:\n");
+
+        printf("%x %s %x (Jenkins)\n", original_hash1, original_hash1 == decoded_hash1 ? "==" : "!=", decoded_hash1);
+        printf("%x %s %x (Adler)\n", original_hash2, original_hash2 == decoded_hash2 ? "==" : "!=", decoded_hash2);
+        printf("%x %s %x (Combined)\n", original_hash3, original_hash3 == decoded_hash3 ? "==" : "!=", decoded_hash3);
+
         return;
     }
 
     printf("\n");
-
-    printf("%x %s %x (Jenkins)\n", original_hash1, original_hash1 == decoded_hash1 ? "==" : "!=", decoded_hash1);
-    printf("%x %s %x (Adler)\n", original_hash2, original_hash2 == decoded_hash2 ? "==" : "!=", decoded_hash2);
-    printf("%x %s %x (Combined)\n", original_hash3, original_hash3 == decoded_hash3 ? "==" : "!=", decoded_hash3);
 
     printf("Success!\n\n");
 }

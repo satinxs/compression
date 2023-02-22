@@ -39,7 +39,7 @@ static error_t do_lzss_decoding(buffer_t input, buffer_t *output)
 
 static error_t do_rolz_encoding(buffer_t input, buffer_t *output)
 {
-    rolz_config_t config = rolz_config_init(8, 4, 2, 24); // 4, 4, 2, 10
+    const rolz_config_t config = rolz_config_init(8, 4, 2, 16);
     u32 output_upper_bound = rolz_get_upper_bound(input.length);
 
     output->bytes = (u8 *)calloc(output_upper_bound, sizeof(u8));
@@ -55,7 +55,7 @@ static error_t do_rolz_decoding(buffer_t input, buffer_t *output)
 {
     error_t error = ERROR_ALL_GOOD;
 
-    rolz_config_t config = rolz_config_init(8, 4, 2, 24); // 4, 4, 2, 10
+    const rolz_config_t config = rolz_config_init(8, 4, 2, 16);
 
     u32 original_length = 0;
     if ((error = rolz_get_original_length(input, &original_length)))
