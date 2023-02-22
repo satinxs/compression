@@ -1,11 +1,11 @@
 #include <bit_stream.h>
 
-inline void bit_stream_reset(bit_stream_t *stream)
+void bit_stream_reset(bit_stream_t *stream)
 {
     stream->buffer_position = 0;
 }
 
-inline bit_stream_t bit_stream_init(buffer_t buffer)
+bit_stream_t bit_stream_init(buffer_t buffer)
 {
     return (bit_stream_t){
         .buffer = buffer.bytes,

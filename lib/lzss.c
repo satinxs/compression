@@ -1,4 +1,4 @@
-#include <common.h>
+#include <lzss.h>
 #include <bit_stream.h>
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -82,7 +82,7 @@ static inline match_t __get_longest_match(lzss_config_t config, buffer_t input, 
     if ((error = fn)) \
         goto error_exit;
 
-error_t lzss_encode(lzss_config_t config, buffer_t input, buffer_t *output, u32 output_bounds)
+error_t lzss_encode(lzss_config_t config, buffer_t input, buffer_t *output)
 {
     error_t error = ERROR_ALL_GOOD;
 

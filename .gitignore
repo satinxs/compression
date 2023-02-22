@@ -1,3 +1,5 @@
 *.exe
 *.lz
 *.rlz
+files
+.vscode

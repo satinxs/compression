@@ -28,9 +28,9 @@ static inline command_line_error_t parse_operation(const char *string, command_l
 
 static inline command_line_error_t parse_mode(const char *string, command_line_options_t *options)
 {
-    if (strcmpi(string, "LZSS") || strcmpi(string, "1"))
+    if (strcasecmp(string, "LZSS") == 0 || strcasecmp(string, "1") == 0)
         options->mode = MODE_LZSS;
-    else if (strcmpi(string, "ROLZ") || strcmpi(string, "2"))
+    else if (strcasecmp(string, "ROLZ") == 0 || strcasecmp(string, "2") == 0)
         options->mode = MODE_ROLZ;
     else
         return CLI_BAD_FORMAT;

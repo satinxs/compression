@@ -1,7 +1,10 @@
 #include <stdio.h>
-#include <common.h>
 #include <stdlib.h>
 #include <time.h>
+
+#include <lzss.h>
+#include <rolz.h>
+
 #include "command_line.h"
 
 static error_t do_lzss_encoding(buffer_t input, buffer_t *output)
@@ -15,7 +18,7 @@ static error_t do_lzss_encoding(buffer_t input, buffer_t *output)
     if (output->bytes == NULL)
         return ERROR_COULD_NOT_ALLOCATE;
 
-    return lzss_encode(config, input, output, output_upper_bound);
+    return lzss_encode(config, input, output);
 }
 
 static error_t do_lzss_decoding(buffer_t input, buffer_t *output)
@@ -32,6 +35,36 @@ static error_t do_lzss_decoding(buffer_t input, buffer_t *output)
     output->length = original_length;
 
     return lzss_decode(config, input, output);
+}
+
+static error_t do_rolz_encoding(buffer_t input, buffer_t *output)
+{
+    rolz_config_t config = rolz_config_init(8, 4, 2, 24); // 4, 4, 2, 10
+    u32 output_upper_bound = rolz_get_upper_bound(input.length);
+
+    output->bytes = (u8 *)calloc(output_upper_bound, sizeof(u8));
+    output->length = output_upper_bound;
+
+    if (output->bytes == NULL)
+        return ERROR_COULD_NOT_ALLOCATE;
+
+    return rolz_encode(config, input, output);
+}
+
+static error_t do_rolz_decoding(buffer_t input, buffer_t *output)
+{
+    error_t error = ERROR_ALL_GOOD;
+
+    rolz_config_t config = rolz_config_init(8, 4, 2, 24); // 4, 4, 2, 10
+
+    u32 original_length = 0;
+    if ((error = rolz_get_original_length(input, &original_length)))
+        return error;
+
+    output->bytes = (u8 *)calloc(original_length, sizeof(u8));
+    output->length = original_length;
+
+    return rolz_decode(config, input, output);
 }
 
 static int print_error_message(command_line_error_t cli_error, error_t lib_error)
@@ -110,8 +143,16 @@ int main(int argc, const char **argv)
         }
         break;
     case MODE_ROLZ:
-        lib_error = ERROR_NO_OP; // TODO: Not implemented!
-        goto exit;
+        if (options.operation == OP_ENCODE)
+        {
+            if ((lib_error = do_rolz_encoding(input_file, &output_file)))
+                goto exit;
+        }
+        else
+        {
+            if ((lib_error = do_rolz_decoding(input_file, &output_file)))
+                goto exit;
+        }
         break;
     }
 

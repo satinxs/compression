@@ -1,12 +1,34 @@
-#include <common.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
+#include <lzss.h>
+#include <rolz.h>
 #include "command_line.h"
 
-void test_lzss(const char *file_name)
+typedef error_t (*process_fn_t)(buffer_t in, buffer_t *out);
+
+static inline rolz_config_t get_rolz_config()
 {
-    printf("Testing LZSS compression with \"%s\"\n", file_name);
+    return rolz_config_init(8, 8, 2, 16); // 8, 4, 2, 24 or: 4, 4, 2, 10
+}
+
+static inline lzss_config_t get_lzss_config()
+{
+    return lzss_config_init(10, 6, 2);
+}
+
+static error_t encode_lzss(buffer_t input, buffer_t *output) { return lzss_encode(get_lzss_config(), input, output); }
+
+static error_t decode_lzss(buffer_t input, buffer_t *output) { return lzss_decode(get_lzss_config(), input, output); }
+
+static error_t encode_rolz(buffer_t input, buffer_t *output) { return rolz_encode(get_rolz_config(), input, output); }
+
+static error_t decode_rolz(buffer_t input, buffer_t *output) { return rolz_decode(get_rolz_config(), input, output); }
+
+void test_compression(const char *file_name, const char *algorithm, process_fn_t encode, process_fn_t decode)
+{
+    printf("Testing %s compression with \"%s\"\n", algorithm, file_name);
 
     buffer_t input_file = {0};
     if (read_file(file_name, &input_file))
@@ -19,8 +41,7 @@ void test_lzss(const char *file_name)
     const u32 original_hash2 = adler32(input_file);
     const u32 original_hash3 = hash_bytes(input_file);
 
-    const lzss_config_t config = lzss_config_init(10, 6, 2);
-
+    // Eh. This should be the same
     const u32 upper_bound_length = lzss_get_upper_bound(input_file.length);
 
     buffer_t encoded = {0};
@@ -35,7 +56,7 @@ void test_lzss(const char *file_name)
 
     const clock_t start_encoding = clock();
 
-    if ((error = lzss_encode(config, input_file, &encoded, upper_bound_length)))
+    if ((error = encode(input_file, &encoded)))
     {
         printf("Failed encoding, error: %d\n", error);
         free(encoded.bytes);
@@ -46,7 +67,7 @@ void test_lzss(const char *file_name)
     const clock_t end_encoding = clock();
 
     const u64 elapsed_encoding = (end_encoding - start_encoding) / (u64)(CLOCKS_PER_SEC / 1000.0f);
-    const float encoding_percentage = (float)encoded.length / (float)input_file.length * 100.0f;
+    const float encoding_percentage = (1.0f - (float)encoded.length / (float)input_file.length) * 100.0f;
     const float encoding_bits_per_ms = (encoded.length * 8.0f) / elapsed_encoding;
 
     printf("Encoded %d->%d, a %f%% compression rate in %lldms. Speed of %f bits/ms\n", input_file.length, encoded.length, encoding_percentage, elapsed_encoding, encoding_bits_per_ms);
@@ -61,7 +82,7 @@ void test_lzss(const char *file_name)
 
     const clock_t start_decoding = clock();
 
-    if ((error = lzss_decode(config, encoded, &decoded)))
+    if ((error = decode(encoded, &decoded)))
     {
         printf("Failed decoding, error: %d\n", error);
         free(encoded.bytes);
@@ -98,10 +119,17 @@ void test_lzss(const char *file_name)
 
 int main(int argc, const char **argv)
 {
-    test_lzss("KingsBounty.md");
-    test_lzss("package-lock.json");
-    test_lzss("Makefile");
-    test_lzss("main.c");
+    test_compression("files/KingsBounty.md", "LZSS", encode_lzss, decode_lzss);
+    test_compression("files/KingsBounty.md", "ROLZ", encode_rolz, decode_rolz);
+
+    test_compression("files/package-lock.json", "LZSS", encode_lzss, decode_lzss);
+    test_compression("files/package-lock.json", "ROLZ", encode_rolz, decode_rolz);
+
+    test_compression("Makefile", "LZSS", encode_lzss, decode_lzss);
+    test_compression("Makefile", "ROLZ", encode_rolz, decode_rolz);
+
+    test_compression("main.c", "LZSS", encode_lzss, decode_lzss);
+    test_compression("main.c", "ROLZ", encode_rolz, decode_rolz);
 
     return EXIT_SUCCESS;
 }
