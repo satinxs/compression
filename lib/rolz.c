@@ -1,6 +1,7 @@
-#include <rolz.h>
-#include <bit_stream.h>
 #include <stdlib.h>
+
+#include <rolz.h>
+#include "bit_stream.h"
 
 typedef struct match_t
 {

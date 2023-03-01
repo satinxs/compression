@@ -1,8 +1,7 @@
 #include <lzss.h>
-#include <bit_stream.h>
+#include "bit_stream.h"
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 _API lzss_config_t lzss_config_init(u8 offset_bits, u8 length_bits, u8 minimum_length)
 {

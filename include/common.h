@@ -1,13 +1,13 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#include <stdint.h>
-
 #ifdef _SHARED
 #define _API __declspec(dllexport)
 #else
 #define _API
 #endif
+
+#include <stdint.h>
 
 typedef uint8_t u8;
 typedef uint32_t u32;
