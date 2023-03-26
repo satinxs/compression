@@ -92,7 +92,7 @@ error_t lzss_encode(lzss_config_t config, buffer_t input, buffer_t *output)
     bit_stream_t stream = bit_stream_init(*output);
 
     // Write the initial size of the buffer
-    try(bit_stream_write_7bit_int32(&stream, input.length));
+    try(bit_stream_write_7bit_int32(&stream, input.length)); // TODO: Maybe we should handle this total amount of symbols somewhere else?
 
     for (u32 index = 0; index < input.length;)
     {
