@@ -68,7 +68,7 @@ command_line_error_t parse_command_line_arguments(int argc, const char **argv, c
     return error;
 }
 
-command_line_error_t read_file(const char *file_name, buffer_t *buffer)
+command_line_error_t read_file(const char *file_name, array_t *buffer)
 {
     FILE *file = fopen(file_name, "rb");
     if (file == NULL)
@@ -78,7 +78,7 @@ command_line_error_t read_file(const char *file_name, buffer_t *buffer)
     buffer->length = ftell(file); // Get how many bytes the file contains
     fseek(file, 0, SEEK_SET);     // Rewind the file pointer to 0
 
-    buffer->bytes = (u8 *)calloc(buffer->length, sizeof(u8));
+    buffer->bytes = (u8 *)malloc(buffer->length);
 
     if (buffer->bytes == NULL)
     {
@@ -101,7 +101,7 @@ command_line_error_t read_file(const char *file_name, buffer_t *buffer)
     return CLI_NO_ERROR;
 }
 
-command_line_error_t write_file(const char *file_name, buffer_t buffer)
+command_line_error_t write_file(const char *file_name, array_t buffer)
 {
     FILE *file = fopen(file_name, "wb+");
 

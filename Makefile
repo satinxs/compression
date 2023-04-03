@@ -16,7 +16,7 @@ release:
 	$(CC) main.c command_line.c lib/hash.c lib/bit_stream.c lib/lzss.c lib/rolz.c $(RELEASE_FLAGS) -o compression$(EXT)
 
 profile:
-	$(CC) main.c command_line.c lib/hash.c lib/bit_stream.c lib/lzss.c lib/rolz.c -O3 -Wall -Wextra -o compression$(EXT) -pg -Iinclude
+	$(CC) main.c command_line.c lib/hash.c lib/bit_stream.c lib/lzss.c lib/rolz.c -O3 -g -Wall -Wextra -o compression$(EXT) -Iinclude
 
 test:
 	$(CC) test.c command_line.c lib/hash.c lib/bit_stream.c lib/lzss.c lib/rolz.c -Include $(RELEASE_FLAGS) -o test$(EXT)

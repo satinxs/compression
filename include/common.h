@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 typedef uint8_t u8;
+typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
@@ -22,14 +23,14 @@ typedef enum error_t
     ERROR_WRONG_OUTPUT_SIZE
 } error_t;
 
-typedef struct buffer_t
+typedef struct array_t
 {
     u8 *bytes;
     u32 length;
-} buffer_t;
+} array_t;
 
 #endif
 
-u32 jenkins32(buffer_t buffer);
-u32 adler32(buffer_t buffer);
-u32 hash_bytes(buffer_t buffer);
+u32 jenkins32(array_t buffer);
+u32 adler32(array_t buffer);
+u32 hash_bytes(array_t buffer);

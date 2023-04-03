@@ -33,10 +33,10 @@
             "request": "launch",
             "program": "${workspaceFolder}/compression.exe",
             "args": [
-                "d",
+                "e",
                 "rolz",
-                "package.rlz",
-                "package.rlz.orig"
+                "Makefile",
+                "Makefile.rolz"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

@@ -25,7 +25,7 @@ _API u32 lzss_get_upper_bound(u32 input_length)
     return (total_bits / 8) + ((total_bits % 8 > 0) ? 1 : 0);
 }
 
-_API error_t lzss_get_original_length(buffer_t input, u32 *original_length)
+_API error_t lzss_get_original_length(array_t input, u32 *original_length)
 {
     bit_stream_t stream = bit_stream_init(input);
 
@@ -48,7 +48,7 @@ typedef struct match_t
     u32 length;
 } match_t;
 
-static inline match_t __get_longest_match(lzss_config_t config, buffer_t input, u32 index)
+static inline match_t __get_longest_match(lzss_config_t config, array_t input, u32 index)
 {
     if (index + config.minimum_length >= input.length)
         return (match_t){.offset = 0, .length = 0};
@@ -81,7 +81,7 @@ static inline match_t __get_longest_match(lzss_config_t config, buffer_t input, 
     if ((error = fn)) \
         goto error_exit;
 
-error_t lzss_encode(lzss_config_t config, buffer_t input, buffer_t *output)
+error_t lzss_encode(lzss_config_t config, array_t input, array_t *output)
 {
     error_t error = ERROR_ALL_GOOD;
 
@@ -126,7 +126,7 @@ no_error_exit:
     return error;
 }
 
-error_t lzss_decode(lzss_config_t config, buffer_t input, buffer_t *output)
+error_t lzss_decode(lzss_config_t config, array_t input, array_t *output)
 {
     error_t error = ERROR_ALL_GOOD;
 

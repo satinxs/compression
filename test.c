@@ -6,7 +6,7 @@
 #include <rolz.h>
 #include "command_line.h"
 
-typedef error_t (*process_fn_t)(buffer_t in, buffer_t *out);
+typedef error_t (*process_fn_t)(array_t in, array_t *out);
 
 static inline rolz_config_t get_rolz_config()
 {
@@ -18,19 +18,19 @@ static inline lzss_config_t get_lzss_config()
     return lzss_config_init(10, 6, 2);
 }
 
-static error_t encode_lzss(buffer_t input, buffer_t *output) { return lzss_encode(get_lzss_config(), input, output); }
+static error_t encode_lzss(array_t input, array_t *output) { return lzss_encode(get_lzss_config(), input, output); }
 
-static error_t decode_lzss(buffer_t input, buffer_t *output) { return lzss_decode(get_lzss_config(), input, output); }
+static error_t decode_lzss(array_t input, array_t *output) { return lzss_decode(get_lzss_config(), input, output); }
 
-static error_t encode_rolz(buffer_t input, buffer_t *output) { return rolz_encode(get_rolz_config(), input, output); }
+static error_t encode_rolz(array_t input, array_t *output) { return rolz_encode(get_rolz_config(), input, output); }
 
-static error_t decode_rolz(buffer_t input, buffer_t *output) { return rolz_decode(get_rolz_config(), input, output); }
+static error_t decode_rolz(array_t input, array_t *output) { return rolz_decode(get_rolz_config(), input, output); }
 
 void test_compression(const char *file_name, const char *algorithm, process_fn_t encode, process_fn_t decode)
 {
     printf("Testing %s compression with \"%s\"\n", algorithm, file_name);
 
-    buffer_t input_file = {0};
+    array_t input_file = {0};
     if (read_file(file_name, &input_file))
     {
         printf("Failed when reading input file \"%s\"\n", file_name);
@@ -44,8 +44,8 @@ void test_compression(const char *file_name, const char *algorithm, process_fn_t
     // Eh. This should be the same
     const u32 upper_bound_length = lzss_get_upper_bound(input_file.length);
 
-    buffer_t encoded = {0};
-    if (!(encoded.bytes = (u8 *)calloc(upper_bound_length, sizeof(u8))))
+    array_t encoded = {0};
+    if (!(encoded.bytes = (u8 *)malloc(upper_bound_length)))
     {
         printf("Failed when allocating memory for the compressed buffer.\n");
         return;
@@ -72,8 +72,8 @@ void test_compression(const char *file_name, const char *algorithm, process_fn_t
 
     printf("Encoded %d->%d, a %f%% compression rate in %lldms. Speed of %f bits/ms\n", input_file.length, encoded.length, encoding_percentage, elapsed_encoding, encoding_bits_per_ms);
 
-    buffer_t decoded = {0};
-    if (!(decoded.bytes = (u8 *)calloc(input_file.length, sizeof(u8))))
+    array_t decoded = {0};
+    if (!(decoded.bytes = (u8 *)malloc(input_file.length)))
     {
         printf("Failed when allocating memory for the decoded buffer.\n");
         return;

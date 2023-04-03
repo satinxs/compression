@@ -7,12 +7,12 @@
 
 #include "command_line.h"
 
-static error_t do_lzss_encoding(buffer_t input, buffer_t *output)
+static error_t do_lzss_encoding(array_t input, array_t *output)
 {
     lzss_config_t config = lzss_config_init(10, 6, 2);
     u32 output_upper_bound = lzss_get_upper_bound(input.length);
 
-    output->bytes = (u8 *)calloc(output_upper_bound, sizeof(u8));
+    output->bytes = (u8 *)malloc(output_upper_bound);
     output->length = output_upper_bound;
 
     if (output->bytes == NULL)
@@ -21,7 +21,7 @@ static error_t do_lzss_encoding(buffer_t input, buffer_t *output)
     return lzss_encode(config, input, output);
 }
 
-static error_t do_lzss_decoding(buffer_t input, buffer_t *output)
+static error_t do_lzss_decoding(array_t input, array_t *output)
 {
     error_t error = ERROR_ALL_GOOD;
 
@@ -31,18 +31,18 @@ static error_t do_lzss_decoding(buffer_t input, buffer_t *output)
     if ((error = lzss_get_original_length(input, &original_length)))
         return error;
 
-    output->bytes = (u8 *)calloc(original_length, sizeof(u8));
+    output->bytes = (u8 *)malloc(original_length);
     output->length = original_length;
 
     return lzss_decode(config, input, output);
 }
 
-static error_t do_rolz_encoding(buffer_t input, buffer_t *output)
+static error_t do_rolz_encoding(array_t input, array_t *output)
 {
     const rolz_config_t config = rolz_config_init(8, 4, 2, 16);
     u32 output_upper_bound = rolz_get_upper_bound(input.length);
 
-    output->bytes = (u8 *)calloc(output_upper_bound, sizeof(u8));
+    output->bytes = (u8 *)malloc(output_upper_bound);
     output->length = output_upper_bound;
 
     if (output->bytes == NULL)
@@ -51,7 +51,7 @@ static error_t do_rolz_encoding(buffer_t input, buffer_t *output)
     return rolz_encode(config, input, output);
 }
 
-static error_t do_rolz_decoding(buffer_t input, buffer_t *output)
+static error_t do_rolz_decoding(array_t input, array_t *output)
 {
     error_t error = ERROR_ALL_GOOD;
 
@@ -61,7 +61,7 @@ static error_t do_rolz_decoding(buffer_t input, buffer_t *output)
     if ((error = rolz_get_original_length(input, &original_length)))
         return error;
 
-    output->bytes = (u8 *)calloc(original_length, sizeof(u8));
+    output->bytes = (u8 *)malloc(original_length);
     output->length = original_length;
 
     return rolz_decode(config, input, output);
@@ -117,14 +117,14 @@ int main(int argc, const char **argv)
     if ((cli_error = parse_command_line_arguments(argc, argv, &options)))
         goto exit;
 
-    buffer_t input_file = {0};
+    array_t input_file = {0};
     if ((cli_error = read_file(argv[3], &input_file)))
     {
         printf("Failed when reading input file \"%s\"\n", argv[3]);
         goto exit;
     }
 
-    buffer_t output_file = {0};
+    array_t output_file = {0};
 
     clock_t start_time = clock();
 

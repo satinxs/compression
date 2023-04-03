@@ -12,7 +12,7 @@ typedef struct bit_stream_t
 
 void bit_stream_reset(bit_stream_t *stream);
 
-bit_stream_t bit_stream_init(buffer_t buffer);
+bit_stream_t bit_stream_init(array_t buffer);
 
 error_t bit_stream_unflush(bit_stream_t *stream);
 error_t bit_stream_flush(bit_stream_t *stream);

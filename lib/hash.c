@@ -2,7 +2,7 @@
 
 static const u32 ADLER_32_MOD = 65521;
 
-u32 jenkins32(buffer_t buffer)
+u32 jenkins32(array_t buffer)
 {
     u32 hash = 0;
 
@@ -20,7 +20,7 @@ u32 jenkins32(buffer_t buffer)
     return hash;
 }
 
-u32 adler32(buffer_t buffer)
+u32 adler32(array_t buffer)
 {
     u32 a = 1;
     u32 b = 0;
@@ -34,7 +34,7 @@ u32 adler32(buffer_t buffer)
     return (b << 16) | a;
 }
 
-u32 hash_bytes(buffer_t buffer)
+u32 hash_bytes(array_t buffer)
 {
     u32 a = 1; // Part of adler32
     u32 b = 0; // Part of adler32

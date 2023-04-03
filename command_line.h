@@ -37,7 +37,7 @@ typedef struct command_line_options_t
 
 command_line_error_t parse_command_line_arguments(int argc, const char **argv, command_line_options_t *options);
 
-command_line_error_t read_file(const char *file_name, buffer_t *buffer);
-command_line_error_t write_file(const char *file_name, buffer_t buffer);
+command_line_error_t read_file(const char *file_name, array_t *buffer);
+command_line_error_t write_file(const char *file_name, array_t buffer);
 
 #endif

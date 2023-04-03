@@ -3,11 +3,19 @@
 #include <rolz.h>
 #include "bit_stream.h"
 
+#define packed __attribute__((__packed__))
+
 typedef struct match_t
 {
     u32 steps;
     u32 length;
 } match_t;
+
+typedef struct pair_t
+{
+    u16 key;
+    u32 position;
+} pair_t;
 
 _API rolz_config_t rolz_config_init(u8 step_bits, u8 count_bits, u8 minimum_match, u8 history_buffer_bits)
 {
@@ -34,7 +42,7 @@ _API u32 rolz_get_upper_bound(u32 input_length)
     return (total_bits / 8) + ((total_bits % 8 > 0) ? 1 : 0);
 }
 
-static inline match_t __get_longest_match(rolz_config_t config, array_t input, u32 index, u32 *dictionary, u32 buffer_mask)
+static inline match_t __get_longest_match(rolz_config_t config, array_t input, u32 index, pair_t *dictionary, u32 buffer_mask, u16 key)
 {
     // If index-length difference is smaller than minimum match, we can't match a pair.
     if (index + config.minimum_match >= input.length)
@@ -47,7 +55,8 @@ static inline match_t __get_longest_match(rolz_config_t config, array_t input, u
 
     while (1)
     {
-        u32 position = dictionary[last_position & buffer_mask];
+        pair_t pair = dictionary[last_position & buffer_mask];
+        u32 position = pair.position;
 
         // We reached the index or there is no other match.
         if (position >= last_position)
@@ -57,8 +66,10 @@ static inline match_t __get_longest_match(rolz_config_t config, array_t input, u
         if ((index - position) > config.max_offset)
             break;
 
-        u32 count = 0;
+        if (pair.key != key)
+            goto continue_loop;
 
+        u32 count = 0;
         while (count < config.max_count && (index + count + 1) < input.length)
         {
             // If the current byte is equal to the previous match
@@ -74,6 +85,7 @@ static inline match_t __get_longest_match(rolz_config_t config, array_t input, u
             max_steps = steps;
         }
 
+    continue_loop:
         if (steps >= config.max_step)
             break;
 
@@ -99,7 +111,7 @@ _API error_t rolz_encode(rolz_config_t config, array_t input, array_t *output)
     // Rolz dictionary creation
     u32 buffer_mask = (1 << config.history_buffer_bits) - 1;
     u32 last_position_lookup[256] = {0};
-    u32 *dictionary = (u32 *)malloc((buffer_mask + 1) * sizeof(u32));
+    pair_t *dictionary = (pair_t *)calloc((buffer_mask + 1), sizeof(pair_t));
 
     if (dictionary == NULL)
         return ERROR_COULD_NOT_ALLOCATE;
@@ -111,11 +123,16 @@ _API error_t rolz_encode(rolz_config_t config, array_t input, array_t *output)
     try(bit_stream_write_7bit_int32(&stream, input.length));
 
     u32 index = 0;
+    u16 key = 0;
 
     do
     {
         u8 byte = input.bytes[index];
-        dictionary[dictionary_index & buffer_mask] = last_position_lookup[byte];
+
+        key <<= 8;
+        key |= byte;
+
+        dictionary[dictionary_index & buffer_mask] = (pair_t){.key = key, .position = last_position_lookup[byte]};
         last_position_lookup[byte] = dictionary_index;
         dictionary_index += 1;
 
@@ -124,7 +141,7 @@ _API error_t rolz_encode(rolz_config_t config, array_t input, array_t *output)
 
         while (1)
         {
-            match_t match = __get_longest_match(config, input, index, dictionary, buffer_mask);
+            match_t match = __get_longest_match(config, input, index, dictionary, buffer_mask, key);
 
             if (match.length >= config.minimum_match)
             {
@@ -136,7 +153,11 @@ _API error_t rolz_encode(rolz_config_t config, array_t input, array_t *output)
                 {
                     index += 1;
                     u8 literal = input.bytes[index];
-                    dictionary[dictionary_index & buffer_mask] = last_position_lookup[literal];
+
+                    key <<= 8;
+                    key |= literal;
+
+                    dictionary[dictionary_index & buffer_mask] = (pair_t){.key = key, .position = last_position_lookup[literal]};
                     last_position_lookup[literal] = dictionary_index;
                     dictionary_index += 1;
                 }
